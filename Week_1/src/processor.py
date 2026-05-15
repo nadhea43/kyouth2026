@@ -40,6 +40,7 @@ def process_all_html(input_dir, output_dir):
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
 
+    # create output directory if not exist yet
     output_dir.mkdir(parents=True, exist_ok=True)
 
     html_files = list(input_dir.glob("*.html"))
@@ -101,6 +102,7 @@ def process_all_html(input_dir, output_dir):
             continue
 
         try:
+            # check guna Pydantic
             job = JobListing(
                 source_id = source_id,
                 job_title = job_title,
@@ -112,7 +114,7 @@ def process_all_html(input_dir, output_dir):
             skipped += 1
             continue
 
-        #convert to JSON and save
+        #convert to JSON and save fx model_dump() tukar Pydantic object to python disctionary
         job_data = job.model_dump()
 
         #create output path
