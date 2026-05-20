@@ -5,9 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "google-genai",
     "bs4>=0.0.2",
     "dotenv>=0.9.9",
-    "google-generativeai>=0.8.6",
     "pydantic>=2.13.4",
     "requests>=2.34.2",
     "ruff>=0.15.13",

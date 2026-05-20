@@ -1,10 +1,13 @@
 import sqlite3
 import time
 import os
-import google.generativeai as genai
+from xml.parsers.expat import model
 from dotenv import load_dotenv
+from pathlib import Path
+from google import genai
 
-load_dotenv()
+BASE_DIR = Path(__file__).parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 GEMINI_MODEL = "gemini-2.5-flash"
 BATCH_SIZE = 5
@@ -16,9 +19,12 @@ def chunked(first, size):
         yield first[i:i + size]
 
 # --------------call GEMINI-------------------------
-def call_gemini(model, prompt: str):
+def call_gemini(client, prompt: str):
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            content=prompt,
+        )
         reply = response.text
 
         # get token usage
@@ -73,11 +79,12 @@ def tag_data(db_url: str):
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         print("GEMINI_API_KEY not found in environment variables.")
+        print(f"        Looking for .env at: {BASE_DIR / '.env'}")
         return 0,0,0
     
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(GEMINI_MODEL)
+        client = genai.Client(api_key=api_key)
+        print(f"Gemini ready! Using model: {GEMINI_MODEL}\n")
     except Exception as e:
         print(f"Error configuring Gemini API: {e}")
         return 0,0,0
@@ -141,7 +148,7 @@ def tag_data(db_url: str):
         # --retry loop--
         success = False
         for attempt in range(1, MAX_RETRIES + 1):
-            reply, input_tokens, output_tokens = call_gemini(model, prompt)
+            reply, input_tokens, output_tokens = call_gemini(client, prompt)
 
         # if Gemini returned an error string
         if reply.startswith("[ERROR]"):
@@ -153,7 +160,7 @@ def tag_data(db_url: str):
         total_input_tokens += input_tokens
         total_output_tokens += output_tokens
 
-        # parse the reply to clean replt tu
+        # parse the reply to clean reply
         results = parse_reply(reply)
         batch_ids = [int(row[0]) for row in batch]
         if not results:
@@ -188,7 +195,20 @@ def tag_data(db_url: str):
         print(f"[Batch {batch_num}] Successfully tagged {len(results)} jobs. Input tokens: {input_tokens}, Output tokens: {output_tokens}")
         break  # exit retry loop on success
 
-        if not success:
+    if not success:
             print(f"[Batch {batch_num}] Failed after {MAX_RETRIES} attempts. Moving to next batch.")
+
+    conn.close()
+
+    #summary
+    elapsed = (time.time() - start_time) * 1000
+    total_tokens = total_input_tokens + total_output_tokens
+    print(f"\nTagging completed. Total tokens used: {total_tokens} (Input: {total_input_tokens}, Output: {total_output_tokens}), took {elapsed:.3f}ms")
+    return total_input_tokens, total_output_tokens, elapsed
+
+if __name__ == "__main__":    
+    db_url = "data/jobs_d1.db"
+    tag_data(db_url)
+
 
             
