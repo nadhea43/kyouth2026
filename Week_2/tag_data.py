@@ -9,7 +9,7 @@ from google import genai
 BASE_DIR = Path(__file__).parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.1-flash-lite"
 BATCH_SIZE = 5
 MAX_RETRIES = 3
 RETRY_WAIT = 5  # seconds
@@ -23,7 +23,7 @@ def call_gemini(client, prompt: str):
     try:
         response = client.models.generate_content(
             model=GEMINI_MODEL,
-            content=prompt,
+            contents=prompt,
         )
         reply = response.text
 
@@ -31,8 +31,8 @@ def call_gemini(client, prompt: str):
         input_tokens = 0    # Length of our question
         output_tokens = 0   # Length of the AI answer
         if hasattr(response, "usage_metadata") and response.usage_metadata:
-            input_tokens = response.usage_metadata.prompt_tokens_count or 0
-            output_tokens = response.usage_metadata.candidates_tokens_count or 0
+            input_tokens = response.usage_metadata.prompt_token_count or 0
+            output_tokens = response.usage_metadata.candidates_token_count or 0
 
         # fallback
         if input_tokens == 0:
@@ -150,25 +150,26 @@ def tag_data(db_url: str):
         for attempt in range(1, MAX_RETRIES + 1):
             reply, input_tokens, output_tokens = call_gemini(client, prompt)
 
-        # if Gemini returned an error string
-        if reply.startswith("[ERROR]"):
-            print(f"[Batch {batch_num}] Attempt {attempt} failed with error: {reply}")
-            if attempt < MAX_RETRIES:
-                print(f"Retrying in {RETRY_WAIT} seconds...")
-                time.sleep(RETRY_WAIT)
-            continue
+       # Check if reply is None (API error) or returned an error string
+            if reply is None or reply.startswith("[ERROR]"):
+                print(f"[Batch {batch_num}] Attempt {attempt} failed.")
+                if attempt < MAX_RETRIES:
+                    wait_time = 60 if reply is None else RETRY_WAIT
+                    print(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                continue
+
         total_input_tokens += input_tokens
         total_output_tokens += output_tokens
 
-        # parse the reply to clean reply
+        # Parse the reply
         results = parse_reply(reply)
-        batch_ids = [int(row[0]) for row in batch]
         if not results:
             print(f"[Batch {batch_num}] Attempt {attempt} failed to parse any valid job tags.")
             if attempt < MAX_RETRIES:
                 print(f"Retrying in {RETRY_WAIT} seconds...")
                 time.sleep(RETRY_WAIT)
-            continue
+            continue # Try the next attempt
 
         # save results to db
         for source_id , _ in batch:
@@ -181,22 +182,27 @@ def tag_data(db_url: str):
                         SET tech_stack = ?
                         WHERE source_id = ?
                     """, (tech_stack, job_id))
+                    print(f"Analyzed Job {job_id}: {tech_stack}")
                 except Exception as e:
                     print(f"Error updating database for job {job_id}: {e}")
             else:
                 print(f"Warning: No tags found for job {job_id} in Gemini reply.")
         
-        try:
-            conn.commit()
-        except Exception as e:
-            print(f"Error committing changes to database: {e}")
-        
-        success = True
-        print(f"[Batch {batch_num}] Successfully tagged {len(results)} jobs. Input tokens: {input_tokens}, Output tokens: {output_tokens}")
-        break  # exit retry loop on success
+            try:
+                conn.commit()
+            except Exception as e:
+                print(f"Error committing changes to database: {e}")
+            
+            success = True
+            print(f"[Batch {batch_num}] Successfully tagged {len(results)} jobs...")
+            
+            break
 
-    if not success:
+        if not success:
             print(f"[Batch {batch_num}] Failed after {MAX_RETRIES} attempts. Moving to next batch.")
+            continue
+        
+        time.sleep(4)  # brief pause between batches to avoid rate limits
 
     conn.close()
 
@@ -207,7 +213,7 @@ def tag_data(db_url: str):
     return total_input_tokens, total_output_tokens, elapsed
 
 if __name__ == "__main__":    
-    db_url = "data/jobs_d1.db"
+    db_url = "data/jobs.db"
     tag_data(db_url)
 
 
