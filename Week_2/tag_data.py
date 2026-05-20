@@ -138,7 +138,7 @@ def tag_data(db_url: str):
         ]
 
         for source_id, description in batch:
-            short_desc = (description or "")[:700]  # take first 700 chars for context
+            short_desc = (description or "")[:4000]  # take first 700 chars for context
             prompt_lines.append(f"JOB {source_id}: {short_desc}")
             prompt_lines.append("---")
 
@@ -201,7 +201,7 @@ def tag_data(db_url: str):
         if not success:
             print(f"[Batch {batch_num}] Failed after {MAX_RETRIES} attempts. Moving to next batch.")
             continue
-        
+
         time.sleep(4)  # brief pause between batches to avoid rate limits
 
     conn.close()
