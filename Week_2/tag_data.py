@@ -3,47 +3,27 @@ import time
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+from prompt_model import prompt_model
+
 from google import genai
 
 BASE_DIR = Path(__file__).parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-GEMINI_MODEL = "gemini-3.1-flash-lite"
+GEMINI_MODEL = "gemini-2.5-flash"
 BATCH_SIZE = 5
 MAX_RETRIES = 3
 RETRY_WAIT = 5  # seconds
 
+#split list into chunks
 def chunked(first, size):
     for i in range(0, len(first), size):
         yield first[i:i + size]
 
-# --------------call GEMINI-------------------------
-def call_gemini(client, prompt: str):
-    try:
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
-        reply = response.text
-
-        # get token usage
-        input_tokens = 0    # Length of our question
-        output_tokens = 0   # Length of the AI answer
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
-            input_tokens = response.usage_metadata.prompt_token_count or 0
-            output_tokens = response.usage_metadata.candidates_token_count or 0
-
-        # fallback
-        if input_tokens == 0:
-            input_tokens = len(prompt.split()) * 4
-        if output_tokens == 0:
-            output_tokens = len(reply.split()) * 4
-
-        return reply, input_tokens, output_tokens 
-    
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return None, 0, 0
+# ── Helper: estimate tokens (since prompt_model doesn't return count) ─
+def estimate_tokens(text: str) -> int:
+    # Task says: assume 4 tokens per word if model doesn't return count
+    return len(text.split()) * 4
 
 # --------------Parse AI reply into jobs-------------------------
 def parse_reply(reply: str):
@@ -73,20 +53,7 @@ def tag_data(db_url: str):
     total_input_tokens = 0
     total_output_tokens = 0
     start_time = time.time()
-
-    # setup gemini
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("GEMINI_API_KEY not found in environment variables.")
-        print(f"        Looking for .env at: {BASE_DIR / '.env'}")
-        return 0,0,0
-    
-    try:
-        client = genai.Client(api_key=api_key)
-        print(f"Gemini ready! Using model: {GEMINI_MODEL}\n")
-    except Exception as e:
-        print(f"Error configuring Gemini API: {e}")
-        return 0,0,0
+    print(f"Using model: [{GEMINI_MODEL}] via prompt_model.py\n")
     
     # connect to db
     try:
@@ -144,10 +111,13 @@ def tag_data(db_url: str):
         prompt_lines.append("\nReply with ONLY the JOB lines. No extra text, no explanation.")
         prompt = "\n".join(prompt_lines)
 
+        # Count input tokens (estimated since prompt_model doesn't return count)
+        total_input_tokens += estimate_tokens(prompt)
+
         # --retry loop--
         success = False
         for attempt in range(1, MAX_RETRIES + 1):
-            reply, input_tokens, output_tokens = call_gemini(client, prompt)
+            reply = prompt_model(GEMINI_MODEL, prompt)
 
             # Check if reply is None (API error) or returned an error string
             if reply is None or reply.startswith("[ERROR]"):
@@ -158,8 +128,8 @@ def tag_data(db_url: str):
                     time.sleep(wait_time)
                 continue
 
-            total_input_tokens += input_tokens
-            total_output_tokens += output_tokens
+            # Count output tokens (estimated)
+            total_output_tokens += estimate_tokens(reply)
 
             # Parse the reply
             results = parse_reply(reply)
@@ -208,11 +178,11 @@ def tag_data(db_url: str):
     #summary
     elapsed = (time.time() - start_time) * 1000
     total_tokens = total_input_tokens + total_output_tokens
-    print(f"\nTagging completed. Total tokens used: {total_tokens} (Input: {total_input_tokens}, Output: {total_output_tokens}), took {elapsed:.3f}ms")
+    print(f"\nTagging completed. Total tokens used: {total_tokens}, took {elapsed:.3f}ms")
     return total_input_tokens, total_output_tokens, elapsed
 
 if __name__ == "__main__":    
-    db_url = "data/jobs.db"
+    db_url = "data/jobs_d1.db"
     tag_data(db_url)
 
 
