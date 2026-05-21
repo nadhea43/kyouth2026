@@ -1,7 +1,6 @@
 import sqlite3
 import time
 import os
-from xml.parsers.expat import model
 from dotenv import load_dotenv
 from pathlib import Path
 from google import genai
@@ -138,7 +137,7 @@ def tag_data(db_url: str):
         ]
 
         for source_id, description in batch:
-            short_desc = (description or "")[:4000]  # take first 700 chars for context
+            short_desc = (description or "")[:4000]  
             prompt_lines.append(f"JOB {source_id}: {short_desc}")
             prompt_lines.append("---")
 
@@ -150,7 +149,7 @@ def tag_data(db_url: str):
         for attempt in range(1, MAX_RETRIES + 1):
             reply, input_tokens, output_tokens = call_gemini(client, prompt)
 
-       # Check if reply is None (API error) or returned an error string
+            # Check if reply is None (API error) or returned an error string
             if reply is None or reply.startswith("[ERROR]"):
                 print(f"[Batch {batch_num}] Attempt {attempt} failed.")
                 if attempt < MAX_RETRIES:
@@ -159,34 +158,34 @@ def tag_data(db_url: str):
                     time.sleep(wait_time)
                 continue
 
-        total_input_tokens += input_tokens
-        total_output_tokens += output_tokens
+            total_input_tokens += input_tokens
+            total_output_tokens += output_tokens
 
-        # Parse the reply
-        results = parse_reply(reply)
-        if not results:
-            print(f"[Batch {batch_num}] Attempt {attempt} failed to parse any valid job tags.")
-            if attempt < MAX_RETRIES:
-                print(f"Retrying in {RETRY_WAIT} seconds...")
+            # Parse the reply
+            results = parse_reply(reply)
+            if not results:
+                print(f"[Batch {batch_num}] Attempt {attempt} failed to parse any valid job tags.")
+                if attempt < MAX_RETRIES:
+                    print(f"Retrying in {RETRY_WAIT} seconds...")
                 time.sleep(RETRY_WAIT)
-            continue # Try the next attempt
+                continue # Try the next attempt
 
-        # save results to db
-        for source_id , _ in batch:
-            job_id = int(source_id)
-            if job_id in results:
-                tech_stack = results[job_id]
-                try:
-                    cursor.execute("""
+            # save results to db
+            for source_id , _ in batch:
+                job_id = int(source_id)
+                if job_id in results:
+                    tech_stack = results[job_id]
+                    try:
+                        cursor.execute("""
                         UPDATE jobs
                         SET tech_stack = ?
                         WHERE source_id = ?
                     """, (tech_stack, job_id))
-                    print(f"Analyzed Job {job_id}: {tech_stack}")
-                except Exception as e:
-                    print(f"Error updating database for job {job_id}: {e}")
-            else:
-                print(f"Warning: No tags found for job {job_id} in Gemini reply.")
+                        print(f"Analyzed Job {job_id}: {tech_stack}")
+                    except Exception as e:
+                        print(f"Error updating database for job {job_id}: {e}")
+                else:
+                    print(f"Warning: No tags found for job {job_id} in Gemini reply.")
         
             try:
                 conn.commit()
