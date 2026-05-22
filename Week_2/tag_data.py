@@ -12,7 +12,7 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 BATCH_SIZE = 5
 MAX_RETRIES = 3
-RETRY_WAIT = 5  # seconds
+RETRY_WAIT = 8  # seconds
 
 #split list into chunks
 def chunked(first, size):

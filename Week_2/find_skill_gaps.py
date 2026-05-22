@@ -16,7 +16,7 @@ load_dotenv(dotenv_path=BASE_DIR / ".env")
 # config Gemini
 GEMINI_MODEL = "gemini-2.5-flash-lite"
 MAX_RETRIES = 3
-RETRY_WAIT = 5  # seconds
+RETRY_WAIT = 8  # seconds
 
 # Pydantic model
 class SkillGapResult(BaseModel):
