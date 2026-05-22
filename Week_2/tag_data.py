@@ -5,12 +5,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 from prompt_model import prompt_model
 
-from google import genai
 
 BASE_DIR = Path(__file__).parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 BATCH_SIZE = 5
 MAX_RETRIES = 3
 RETRY_WAIT = 5  # seconds
@@ -182,7 +181,7 @@ def tag_data(db_url: str):
     return total_input_tokens, total_output_tokens, elapsed
 
 if __name__ == "__main__":    
-    db_url = "data/jobs_d1.db"
+    db_url = "data/resources/jobs_d1.db"
     tag_data(db_url)
 
 

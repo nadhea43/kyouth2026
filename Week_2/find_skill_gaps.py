@@ -4,10 +4,9 @@ import os
 import re
 import json
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from google import genai
 from prompt_model import prompt_model
 
 # load .env file for API keys
@@ -15,7 +14,7 @@ BASE_DIR = Path(__file__).parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # config Gemini
-GEMINI_MODEL = "gemini-3.1-flash-lite"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 MAX_RETRIES = 3
 RETRY_WAIT = 5  # seconds
 
@@ -44,6 +43,7 @@ def sanitize_input(text: str) -> str:
     
     lines = text.splitlines()
     clean_lines = []
+
     for line in lines:   
         is_injection = False          # ← reset for each line
         for pattern in injection_patterns:   # ← loop through each pattern
@@ -56,7 +56,7 @@ def sanitize_input(text: str) -> str:
     return "\n".join(clean_lines)
     
 # Extracts skills from resume using gemini AI
-def extract_resume_skills(client, resume_text: str) -> tuple[set, int]:
+def extract_resume_skills(resume_text: str) -> tuple:
     prompt = """You are a technical skill extractor analyzing a resume.
     Extract ONLY the technical skills, tools, programming languages, and frameworks 
     from the resume below.
@@ -84,19 +84,18 @@ def extract_resume_skills(client, resume_text: str) -> tuple[set, int]:
 
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=prompt,
-            )
-            reply = response.text.strip()
+            reply = prompt_model(GEMINI_MODEL, prompt)
 
-            #count tokens
-            if hasattr(response, "usage_metadata") and response.usage_metadata:
-                total_tokens += (response.usage_metadata.prompt_token_count or 0)
-                total_tokens += (response.usage_metadata.candidates_token_count or 0)
-            else:
-                total_tokens += len(prompt.split())  # fallback token estimation
-        
+            if reply is None or any(reply.startswith(err) for err in [
+                "[ERROR]", "[Gemini Error]", "[Ollama error]",
+                "[Unexpected Error]", "[Error]", "[No response]"
+            ]):
+                raise ValueError(f"prompt_model returned error: {reply}")
+            
+            # Estimate tokens — prompt_model doesn't return token count
+            total_tokens += len(prompt.split()) * 4   # input tokens
+            total_tokens += len(reply.split()) * 4    # output tokens
+            
             # clean reply 
             reply = re.sub(r"```(?:json)?", "", reply).strip()  # remove markdown code fences if present
             reply = reply.strip("`").strip()
@@ -171,17 +170,7 @@ def build_normalized_set(skills: set) -> dict:
 def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
     start_time = time.time()
 
-    # setup Gemini
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("[ERROR] GEMINI_API_KEY not found in environment variables.")
-        return SkillGapResult(gaps=[], tokens=0, time=0)
-    
-    try:
-        client = genai.Client(api_key=api_key)
-    except Exception as e:
-        print(f"[ERROR] Failed to initialize Gemini client: {e}")
-        return SkillGapResult(gaps=[], tokens=0, time=0)
+    print(f"Using model: [{GEMINI_MODEL}] via prompt_model.py\n")
     
     # read resume text from file
     try:
@@ -195,7 +184,7 @@ def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
 
     # extract skills from resume
     print("Extracting skills from resume...")
-    resume_skills, tokens_used = extract_resume_skills(client, resume_text)
+    resume_skills, tokens_used = extract_resume_skills(resume_text)
     print(f"Resume skills found: {sorted(resume_skills)} \n")
 
     # get market skills from database
@@ -234,10 +223,10 @@ def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
     return result
 
 if __name__ == "__main__":
-    input_file = "data/resume_d3.txt"
-    db_url = "data/jobs_d1.db"
+    input_file_resume = "data/resources_eval/resume_d3_eval.txt"
+    db_url = "data/resources_eval/jobs_d3_eval.db"
 
-    find_skill_gaps(input_file, db_url)
+    find_skill_gaps(input_file_resume, db_url)
       
 
     

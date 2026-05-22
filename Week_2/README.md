@@ -16,6 +16,12 @@ The system performs two primary automated workflows:
 * **Environment & Package Manager**: `uv` version `0.8.*` 
 * **Local LLM Engine**: Ollama (configured with version `0.21.*`) 
 * **Operating System**: Platform-independent (fully supports Linux, macOS, and Windows) 
+* **Create data folder**: Create a new 'data' folder, and two other files below 'resources' and 'resources_eval' to add folder document downloaded from notion
+    ```bash
+    -Week_2
+        |_data
+            |_resources
+            |_resources_eval
 
 ### Environment Configuration
 1. **Install Local Models**: Ensure Ollama is running locally and pull the required target models[cite: 131, 133]:
@@ -42,7 +48,9 @@ Run the operational scripts via the uv environment runner:
 Test connectivity to either local Ollama instances or Cloud Gemini instances:
     ```Bash
     # General Syntax: uv run prompt_model.py <model_name> "<prompt>"
-    uv run prompt_model.py llama3.1 "Why did the durian go to the doctor?"
+    uv run prompt_model.py llama3.1 "tell me one country"
+
+    uv run prompt_model.py gemini-2.5-flash "tell me one country"
 
 2. Run Database Tagging
 Populate empty tech_stack columns in your jobs database using batched execution:
