@@ -8,13 +8,14 @@ from typing import List, Tuple
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from google import genai
+from prompt_model import prompt_model
 
 # load .env file for API keys
 BASE_DIR = Path(__file__).parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
 # config Gemini
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.1-flash-lite"
 MAX_RETRIES = 3
 RETRY_WAIT = 5  # seconds
 
@@ -43,11 +44,13 @@ def sanitize_input(text: str) -> str:
     
     lines = text.splitlines()
     clean_lines = []
-    for line in lines:
-        if re.search(pattern, line, re.IGNORECASE):
-            print(f"[Sanitize] Removing suspicious line: {line.strip()}")
-            is_injection = True
-            break
+    for line in lines:   
+        is_injection = False          # ← reset for each line
+        for pattern in injection_patterns:   # ← loop through each pattern
+            if re.search(pattern, line, re.IGNORECASE):
+                print(f"[Sanitize] Removing suspicious line: {line.strip()}")
+                is_injection = True
+                break
         if not is_injection:
             clean_lines.append(line)
     return "\n".join(clean_lines)
@@ -90,6 +93,7 @@ def extract_resume_skills(client, resume_text: str) -> tuple[set, int]:
             #count tokens
             if hasattr(response, "usage_metadata") and response.usage_metadata:
                 total_tokens += (response.usage_metadata.prompt_token_count or 0)
+                total_tokens += (response.usage_metadata.candidates_token_count or 0)
             else:
                 total_tokens += len(prompt.split())  # fallback token estimation
         
@@ -113,7 +117,7 @@ def extract_resume_skills(client, resume_text: str) -> tuple[set, int]:
             print(f"[Attempt {attempt}] Error extracting skills: {e}")
             if attempt < MAX_RETRIES:
                 print(f"Retrying in {RETRY_WAIT}s...")
-            time.sleep(RETRY_WAIT)
+                time.sleep(RETRY_WAIT)
 
     # If all retries fail, return empty set and total tokens counted    
     print("Failed to extract skills after multiple attempts.")
@@ -197,7 +201,7 @@ def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
     # get market skills from database
     print("Reading market skills from database...")
     market_skills = get_market_skills(db_url)
-    print(f"UniqueMarket skills found: {len(market_skills)}\n {sorted(market_skills)} \n")
+    #print(f"UniqueMarket skills found: {len(market_skills)}\n {sorted(market_skills)} \n")
 
     # build normalized lookup for resume skills
     #This handles "c/c++" matching against "c" or "c++" in market
@@ -216,7 +220,7 @@ def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
     gaps = sorted(set(gaps))
 
     # calculate time taken  
-    elapsed_time = int(time.time() - start_time) * 1000  # convert to milliseconds
+    elapsed_time = int((time.time() - start_time) * 1000) # convert to milliseconds
 
     result = SkillGapResult(
         gaps=gaps,
@@ -231,7 +235,7 @@ def find_skill_gaps(input_file_path:str , db_url:str) -> SkillGapResult:
 
 if __name__ == "__main__":
     input_file = "data/resume_d3.txt"
-    db_url = "data/jobs.db"
+    db_url = "data/jobs_d1.db"
 
     find_skill_gaps(input_file, db_url)
       

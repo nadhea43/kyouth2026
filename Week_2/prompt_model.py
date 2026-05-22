@@ -1,12 +1,14 @@
 import os
 import sys
 import requests
+from dotenv import load_dotenv
+from pathlib import Path
 
-
-GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "your-api-key-here")
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
+GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
 OLLAMA_MODELS = {"llama3.1", "phi3", "deepseek-r1:1.5b"}
-GEMINI_MODELS = {"gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview"}
+GEMINI_MODELS = {"gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview", "gemini-3.1-flash-lite"}
 
 def prompt_model(model:str, prompt:str) -> str:
     try:
