@@ -1,13 +1,12 @@
 import sqlite3
 import time
 import requests
-import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # ── Config — change this to swap models easily ──────────────────────
-OLLAMA_MODEL = "llama3.1"        # or "phi3" or "deepseek-r1:1.5b"
+OLLAMA_MODEL = "phi3"        # or "phi3" or "deepseek-r1:1.5b"
 OLLAMA_URL   = "http://localhost:11434/api/generate"
 BATCH_SIZE   = 5
 MAX_RETRIES  = 3
@@ -111,7 +110,7 @@ def tag_data(db_url: str):
         for source_id, description in batch:
             # Truncate long descriptions to save time & tokens
             short_desc = (description or "")[:600]
-            prompt_lines.append(f"JOB {source_id}:\n{short_desc}")
+            prompt_lines.append(f"JOB {source_id}: {short_desc}")
             prompt_lines.append("---")
 
         prompt_lines.append("\nNow reply with ONLY the JOB_ID: skills lines, no extra text.")
@@ -131,6 +130,7 @@ def tag_data(db_url: str):
                 continue
 
             total_output_tokens += estimate_tokens(reply)
+            
 
             # ── Parse the reply ──────────────────────────────────────
             # We expect lines like:   JOB 91397216: Python, SQL, Java
