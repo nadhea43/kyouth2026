@@ -1,0 +1,21 @@
+# Environment files — never commit these (contains API keys!)
+.env
+**/.env
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+**/.venv/
+
+# Python cache folders
+*.egg-info/
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
