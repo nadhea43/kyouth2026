@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 load_dotenv(dotenv_path=Path(__file__).parent / ".env")
-GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY")
 
 OLLAMA_MODELS = {"llama3.1", "phi3", "deepseek-r1:1.5b"}
 GEMINI_MODELS = {"gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview", "gemini-3.1-flash-lite"}

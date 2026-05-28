@@ -11,11 +11,23 @@ app = FastAPI() # [cite: 24]
 # Point Jinja2 to your templates directory
 templates = Jinja2Templates(directory="src/templates") 
 
+# 1. The Route for your new Landing Page
 @app.get("/", response_class=HTMLResponse)
+async def landing_page(request: Request):
+    return templates.TemplateResponse(
+        request=request, 
+        name="index.html", 
+        context={"request": request}
+        
+    )
+
+# 2. The Route for your Chat Page
+@app.get("/chat", response_class=HTMLResponse)
 async def chat_page(request: Request):
     backend_url = os.getenv("BACKEND_URL", "http://localhost:8001")
     return templates.TemplateResponse(
-        request=request,                    # ← pass as keyword argument
-        name="chat_page.html",              # ← name as keyword argument
-        context={"backend_url": backend_url} # ← context WITHOUT request inside
+        request=request, 
+        name="chat_page.html", 
+        context={"backend_url": backend_url}
     )
+

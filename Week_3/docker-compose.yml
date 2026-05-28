@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    networks:
+      - ai_pipeline_network
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8000:8000" 
+    networks:
+      - ai_pipeline_network
+
+networks:
+  ai_pipeline_network:
+    driver: bridge
