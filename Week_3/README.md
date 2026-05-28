@@ -13,11 +13,12 @@ Make sure you have the following tools installed on your local computer
 The application reads parameters directly from an environment configuration file to protect sensitive information. Create a `.env` file in the `Week_3` root folder based on the provided `.env.example` template:
 
 ```env
-# Server endpoints
-BACKEND_URL=http://localhost:8000
+# server endpoints
+BACKEND_URL=http://localhost:8001
 
-# AI Model settings
-OLLAMA_MODEL=llama3.1
+# AI model configs
+OLLAMA_MODEL = phi3
+OLLAMA_HOST = http://localhost:11434
 GEMINI_MODEL=gemini-2.5-flash-lite
 
 # Secret Keys
