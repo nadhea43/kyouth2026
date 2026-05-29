@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="src/templates")
 async def landing_page(request: Request):
     return templates.TemplateResponse(
         request=request, 
-        name="index.html", 
+        name="landing_page.html", 
         context={"request": request}
         
     )

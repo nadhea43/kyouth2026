@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resume Helper — AI Pipeline</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #111318;
+      --ink-soft: #4a4f5c;
+      --ink-muted: #9399a6;
+      --bg: #f7f6f3;
+      --bg-card: #ffffff;
+      --accent: #2563eb;
+      --accent-soft: #eff4ff;
+      --border: #e4e2dd;
+      --gemini: #8b5cf6;
+      --ollama: #059669;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 60px;
+      background: rgba(247,246,243,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .nav-cta {
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .nav-cta:hover { background: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid #bfdbfe;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 32px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .hero-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(40px, 7vw, 80px);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      max-width: 800px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    h1 span { color: var(--accent); }
+    .hero-sub {
+      font-size: 18px;
+      color: var(--ink-soft);
+      max-width: 520px;
+      font-weight: 300;
+      margin-bottom: 44px;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+    .btn-primary {
+      background: var(--ink);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover { background: var(--accent); transform: translateY(-1px); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      padding: 14px 32px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--ink); transform: translateY(-1px); }
+
+    /* ── DIVIDER ── */
+    .divider {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── SECTION ── */
+    section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-muted);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.15;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 16px;
+      color: var(--ink-soft);
+      max-width: 560px;
+      font-weight: 300;
+      margin-bottom: 48px;
+    }
+
+    /* ── WHAT IS IT ── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.07);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    /* ── PIPELINE ── */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .pipeline-step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 24px;
+      position: relative;
+    }
+    .pipeline-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 23px;
+      top: 52px;
+      bottom: -20px;
+      width: 2px;
+      background: var(--border);
+    }
+    .step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .step-body {
+      padding: 12px 0 40px;
+    }
+    .step-body h3 {
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+    .step-body p {
+      font-size: 14px;
+      color: var(--ink-soft);
+      font-weight: 300;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .step-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag-blue { background: var(--accent-soft); color: var(--accent); }
+    .tag-purple { background: #f3f0ff; color: var(--gemini); }
+    .tag-green { background: #ecfdf5; color: var(--ollama); }
+    .tag-gray { background: #f1f5f9; color: #475569; }
+
+    /* ── HOW TO USE ── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .use-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .use-step-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 36px;
+      color: var(--border);
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+    .use-step h3 {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .use-step p {
+      font-size: 13px;
+      color: var(--ink-soft);
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    /* ── TECH STACK ── */
+    .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .tech-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--ink-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tech-pill span { font-size: 18px; }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      background: var(--ink);
+      color: #fff;
+      border-radius: 16px;
+      padding: 64px 48px;
+      text-align: center;
+      margin: 0 24px 80px;
+      max-width: 852px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .cta-section h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(28px, 4vw, 42px);
+      margin-bottom: 16px;
+    }
+    .cta-section p {
+      color: #9ca3af;
+      font-size: 16px;
+      font-weight: 300;
+      margin-bottom: 36px;
+    }
+    .btn-white {
+      background: #fff;
+      color: var(--ink);
+      padding: 14px 36px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-white:hover { background: var(--accent-soft); color: var(--accent); transform: translateY(-1px); }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 13px;
+      color: var(--ink-muted);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">Resume Helper</a>
+  <a class="nav-cta" href="/chat">Open Chatbot →</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">AI-Powered Resume Analysis</div>
+  <h1>Your <span>AI pipeline</span> for smarter job hunting</h1>
+  <p class="hero-sub">Upload your resume, find skill gaps against real job listings, and get instant AI-powered career advice.</p>
+  <div class="hero-btns">
+    <a href="/chat" class="btn-primary">Try the Chatbot →</a>
+    <a href="#pipeline" class="btn-secondary">How it works</a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- WHAT IS IT -->
+<section id="what">
+  <p class="section-label reveal">What is this</p>
+  <h2 class="section-title reveal">A full-stack AI chatbot<br>built from scratch</h2>
+  <p class="section-desc reveal">Three services working together — a frontend, a backend, and an AI layer — all containerized with Docker.</p>
+
+  <div class="features">
+    <div class="feature-card reveal">
+      <div class="feature-icon">💬</div>
+      <h3>General Chat</h3>
+      <p>Ask anything. The chatbot uses a local Ollama LLM running on your machine to respond in real time.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📄</div>
+      <h3>PDF Resume Upload</h3>
+      <p>Upload your resume as a PDF. The text is extracted in-browser using PDF.js and sent to the AI for analysis.</p>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔍</div>
+      <h3>Skill Gap Analysis</h3>
+      <p>Type "find skills gap" with your resume attached. Gemini AI compares your skills against a real jobs database.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- PIPELINE -->
+<section id="pipeline">
+  <p class="section-label reveal">How it works</p>
+  <h2 class="section-title reveal">The full AI pipeline</h2>
+  <p class="section-desc reveal">From your browser to the AI model — here's every step that happens when you send a message.</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step reveal">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>You type a message in the browser</h3>
+        <p>The frontend (FastAPI + Jinja2) serves the chat page. JavaScript captures your input and optionally reads a PDF file using PDF.js to extract text client-side.</p>
+        <span class="step-tag tag-blue">FastAPI</span>
+        <span class="step-tag tag-blue">Jinja2</span>
+        <span class="step-tag tag-gray">PDF.js</span>
+        <span class="step-tag tag-gray">Bootstrap</span>
+      </div>
+    </div>
+
+    <div class="pipeline-step reveal">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Frontend sends JSON to the backend</h3>
+        <p>JavaScript calls <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px">POST /chat</code> on the backend with a JSON payload containing your message and any PDF text. The backend URL is set via environment variable — never hardcoded.</p>
+        <span class="step-tag tag-gray">fetch() API</span>
+        <span class="step-tag tag-gray">JSON</span>
+        <span class="step-tag tag-gray">.env</span>
+      </div>
+    </div>
+
+    <div class="pipeline-step reveal">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Backend detects intent & routes the request</h3>
+        <p>The backend (FastAPI) checks what you asked. "Find skills gap" → calls the skill gap function. Anything else → calls general chat. CORS middleware allows the frontend to communicate cross-port.</p>
+        <span class="step-tag tag-blue">FastAPI</span>
+        <span class="step-tag tag-gray">CORS</span>
+        <span class="step-tag tag-gray">Pydantic</span>
+      </div>
+    </div>
+
+    <div class="pipeline-step reveal">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>AI model processes your request</h3>
+        <p>General chat uses <strong>Ollama</strong> running locally on your machine (phi3 model). Skill gap analysis uses <strong>Gemini</strong> to extract skills from your resume, then compares them against a SQLite jobs database.</p>
+        <span class="step-tag tag-green">Ollama (phi3)</span>
+        <span class="step-tag tag-purple">Gemini API</span>
+        <span class="step-tag tag-gray">SQLite</span>
+      </div>
+    </div>
+
+    <div class="pipeline-step reveal">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>Reply appears in the chat</h3>
+        <p>The backend returns JSON <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px">{"reply": "..."}</code> to the frontend. JavaScript renders it as a chat bubble in the conversation history.</p>
+        <span class="step-tag tag-gray">JSONResponse</span>
+        <span class="step-tag tag-gray">DOM</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW TO USE -->
+<section id="how-to-use">
+  <p class="section-label reveal">How to use</p>
+  <h2 class="section-title reveal">Get started in 4 steps</h2>
+  <p class="section-desc reveal">Everything runs locally or in Docker containers.</p>
+
+  <div class="steps-grid">
+    <div class="use-step reveal">
+      <div class="use-step-num">01</div>
+      <h3>Start Ollama</h3>
+      <p>Run <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px;font-size:12px">ollama serve</code> to start the local AI model on port 11434.</p>
+    </div>
+    <div class="use-step reveal">
+      <div class="use-step-num">02</div>
+      <h3>Run the backend</h3>
+      <p>Start the FastAPI backend on port 8001 — locally or via Docker container.</p>
+    </div>
+    <div class="use-step reveal">
+      <div class="use-step-num">03</div>
+      <h3>Run the frontend</h3>
+      <p>Start the FastAPI frontend on port 8000 — locally or via Docker container.</p>
+    </div>
+    <div class="use-step reveal">
+      <div class="use-step-num">04</div>
+      <h3>Open the chatbot</h3>
+      <p>Go to <code style="background:#f1f5f9;padding:2px 5px;border-radius:3px;font-size:12px">localhost:8000</code> and start chatting or upload your resume!</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TECH STACK -->
+<section id="tech">
+  <p class="section-label reveal">Built with</p>
+  <h2 class="section-title reveal">Tech stack</h2>
+  <p class="section-desc reveal">All open-source tools, containerized with Docker.</p>
+
+  <div class="tech-pills reveal">
+    <div class="tech-pill"><span>🐍</span> Python 3.12</div>
+    <div class="tech-pill"><span>⚡</span> FastAPI</div>
+    <div class="tech-pill"><span>🦄</span> Uvicorn</div>
+    <div class="tech-pill"><span>🎨</span> Jinja2</div>
+    <div class="tech-pill"><span>💅</span> Bootstrap 5</div>
+    <div class="tech-pill"><span>📄</span> PDF.js</div>
+    <div class="tech-pill"><span>🤖</span> Ollama (phi3)</div>
+    <div class="tech-pill"><span>✨</span> Gemini API</div>
+    <div class="tech-pill"><span>🐳</span> Docker</div>
+    <div class="tech-pill"><span>📦</span> uv</div>
+    <div class="tech-pill"><span>🗄️</span> SQLite</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section reveal">
+  <h2>Ready to analyse your resume?</h2>
+  <p>Upload your PDF and find out which skills you need to land your next job.</p>
+  <a href="/chat" class="btn-white">Open the Chatbot →</a>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  Built with FastAPI, Ollama & Gemini · Containerized with Docker · Week 3 Project
+</footer>
+
+<script>
+  // Scroll reveal animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
