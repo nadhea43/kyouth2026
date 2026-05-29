@@ -1,4 +1,6 @@
 import os
+
+from Lib.pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -9,7 +11,9 @@ load_dotenv()
 app = FastAPI() # [cite: 24]
 
 # Point Jinja2 to your templates directory
-templates = Jinja2Templates(directory="src/templates") 
+# Use absolute path — works on any machine/server
+BASE_DIR = Path(__file__).parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 # 1. The Route for your new Landing Page
 @app.get("/", response_class=HTMLResponse)
