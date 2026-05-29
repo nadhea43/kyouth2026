@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 
+
 def run_data_profile(db_path):
     database_path = Path(db_path)
 
@@ -10,7 +11,7 @@ def run_data_profile(db_path):
 
     # connect database
     connection = sqlite3.connect(db_path)
-    cursor = connection.cursor()    # hand that run the sql
+    cursor = connection.cursor()  # hand that run the sql
 
     # cari total number of row
     cursor.execute("""
@@ -67,12 +68,11 @@ def run_data_profile(db_path):
     # print report
     print(" --- Data Quality Report ----")
     print(f" Total Records: {total_record}")
-    print(f" Missing Values -> job_title: {null_job_title}, company: {null_company}, description: {null_desctiption} ")
+    print(
+        f" Missing Values -> job_title: {null_job_title}, company: {null_company}, description: {null_desctiption} "
+    )
     print(f" Avg Description Length: {Average_description}")
     print(f" Shortest Description: {shortest_description_length} chars")
     print(f" ↳ source_id: {shortest_source_id} | job_title: {shortest_job_title}")
     print(f" Longest Description: {longest_description_length} chars")
     print(f" ↳ source_id: {longest_source_id}  | job_title: {longest_job_title} ")
-
-
-

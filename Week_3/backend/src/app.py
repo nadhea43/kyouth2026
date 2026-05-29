@@ -27,9 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class ChatRequest(BaseModel):
     message: str
     pdf_text: str = ""
+
 
 # Keywords that trigger skill gap analysis
 SKILL_GAP_KEYWORDS = [
@@ -41,9 +43,11 @@ SKILL_GAP_KEYWORDS = [
     "skills gaps",
 ]
 
+
 def is_skill_gap_request(message: str) -> bool:
     """Check if user is asking for skill gap analysis"""
     return any(keyword in message.lower() for keyword in SKILL_GAP_KEYWORDS)
+
 
 @app.post("/chat")
 def chat(request: ChatRequest):
@@ -51,12 +55,13 @@ def chat(request: ChatRequest):
     # ── Route 1: Skill gap analysis ───────────────────────────
     # Triggered when user says "find skills gap" AND has uploaded a PDF
     if is_skill_gap_request(request.message):
-
         # Must have a PDF attached
         if not request.pdf_text:
-            return JSONResponse(content={
-                "reply": "Please upload your resume PDF first, then ask me to find skill gaps!"
-            })
+            return JSONResponse(
+                content={
+                    "reply": "Please upload your resume PDF first, then ask me to find skill gaps!"
+                }
+            )
 
         # Write the PDF text to a temp file — find_skill_gaps() needs a file path
         with tempfile.NamedTemporaryFile(

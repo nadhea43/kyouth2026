@@ -2,7 +2,8 @@ import email
 import quopri
 from pathlib import Path
 
-def ingest_all_mhtml(input_dir,output_dir):
+
+def ingest_all_mhtml(input_dir, output_dir):
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
 
@@ -11,13 +12,13 @@ def ingest_all_mhtml(input_dir,output_dir):
     if not input_dir.exists():
         print("Source directory does not exist.")
         return
-    
+
     mhtml_files = list(input_dir.glob("*.mhtml"))
 
     if not mhtml_files:
         print("no .mthml files found")
         return
-    
+
     total = len(mhtml_files)
     extracted = 0
     failed = 0
@@ -25,7 +26,7 @@ def ingest_all_mhtml(input_dir,output_dir):
     print("Starting extraction....")
 
     for mthml_path in mhtml_files:
-        # baca raw bytes of mthml files sbb email tu expects bytes 
+        # baca raw bytes of mthml files sbb email tu expects bytes
         raw_bytes = mthml_path.read_bytes()
         # parse mthml files tu sebagai email yg ada byk bahagian
         msg = email.message_from_bytes(raw_bytes)
@@ -46,7 +47,7 @@ def ingest_all_mhtml(input_dir,output_dir):
                     break
 
         output_filename = mthml_path.stem + ".html"
-        output_path = output_dir/output_filename
+        output_path = output_dir / output_filename
 
         if html_content:
             # tulis HTML string dekat output file
@@ -57,6 +58,6 @@ def ingest_all_mhtml(input_dir,output_dir):
             print(f"No html content found in {mthml_path.name}")
             failed += 1
 
-    print(f" Bronze Summary: Total: {total} | Extracted: {extracted} | Failed: {failed}")
-
-
+    print(
+        f" Bronze Summary: Total: {total} | Extracted: {extracted} | Failed: {failed}"
+    )

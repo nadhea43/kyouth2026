@@ -2,6 +2,7 @@ import sqlite3
 import json
 from pathlib import Path
 
+
 def init_db(db_path):
 
     # open database file, kalau belum exist then sqlite akan auto create
@@ -19,15 +20,17 @@ def init_db(db_path):
                    description  TEXT,
                    tech_stack   TEXT
                    )
-   """ )
-    
+   """)
+
     connection.commit()
 
     print("Database initiliazed: jobs table is ready")
     return connection
 
-def insert_jobs(cursor,data):
-    cursor.execute("""
+
+def insert_jobs(cursor, data):
+    cursor.execute(
+        """
         INSERT OR IGNORE INTO jobs (source_id, job_title, company, description, tech_stack)
         VALUES(?, ?, ?, ?, ?)
    """,
@@ -37,12 +40,13 @@ def insert_jobs(cursor,data):
             data.get("company"),
             data.get("description"),
             data.get("tech_stack"),
-        )    
-     )
-    
+        ),
+    )
+
     # kira how many rowa affected, if it is duplicate then rowcpunt=0, if new row insert then rowcount=1
     return cursor.rowcount == 1
-    
+
+
 # main function to baca json file n load dlam daatabase
 def load_all_jsons(input_dir, output_dir):
     input_path = Path(input_dir)
@@ -54,7 +58,7 @@ def load_all_jsons(input_dir, output_dir):
     output_path.mkdir(parents=True, exist_ok=True)
 
     # define kat mana database file akan diletakkan
-    db_path = output_path/"jobs.db"
+    db_path = output_path / "jobs.db"
 
     # connect to database
     connection = init_db(db_path)
@@ -64,7 +68,7 @@ def load_all_jsons(input_dir, output_dir):
         print(f"input directory not found: {input_dir}")
         connection.close()
         return
-    
+
     total = 0
     inserted = 0
     skipped = 0
@@ -72,18 +76,17 @@ def load_all_jsons(input_dir, output_dir):
     json_files = list(input_path.glob("*.json"))
 
     for jsonFile in json_files:
-    
         jsonFileName = jsonFile.name
 
         # baca JSON file
         try:
-            with open(jsonFile, "r",encoding="utf=8") as f:
-                data = json.load(f) # parse JSON text into a python dictionary
-                
+            with open(jsonFile, "r", encoding="utf=8") as f:
+                data = json.load(f)  # parse JSON text into a python dictionary
+
         except (json.JSONDecodeError, IOError) as e:
             print(f"Failed to read {jsonFileName}: {e}")
             total += 1
-            continue #skip to next file
+            continue  # skip to next file
 
         total += 1
         was_inserted = insert_jobs(cursor, data)
@@ -95,11 +98,7 @@ def load_all_jsons(input_dir, output_dir):
             skipped += 1
             print(f" Skipped: {jsonFileName}")
 
-    connection.commit() # save dalam db
-    connection.close() #close db when done
+    connection.commit()  # save dalam db
+    connection.close()  # close db when done
 
     print(f" Gold Summary: Total: {total} | Inserted: {inserted} | Skipped: {skipped}")
-
-            
-
-
