@@ -17,7 +17,7 @@ async def landing_page(request: Request):
     return templates.TemplateResponse(
         request=request, 
         name="landing_page.html", 
-        context={"request": request}
+        context={}
         
     )
 
